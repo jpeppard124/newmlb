@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}API Keys | MLB Betting Prediction Engine{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="mb-4">
+        <a href="{{ url_for('admin.admin_panel') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Admin Panel
+        </a>
+    </div>
+    
+    <h1 class="mb-4">API Key Management</h1>
+    
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{ error }}
+    </div>
+    {% endif %}
+    
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card bg-dark">
+                <div class="card-header">
+                    <h4 class="mb-0">Current API Keys</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-dark">
+                            <thead>
+                                <tr>
+                                    <th>Service</th>
+                                    <th>Key</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for key in api_keys %}
+                                <tr>
+                                    <td>{{ key.service }}</td>
+                                    <td><span class="badge bg-secondary">{{ key.key[:4] }}...{{ key.key[-4:] }}</span></td>
+                                    <td>
+                                        <span class="badge {% if key.active %}bg-success{% else %}bg-danger{% endif %}">
+                                            {% if key.active %}Active{% else %}Inactive{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if key.active %}
+                                        <form action="{{ url_for('admin.deactivate_api_key', key_id=key.id) }}" method="post">
+                                            <button type="submit" class="btn btn-danger btn-sm">
+                                                <i class="fas fa-toggle-off"></i> Deactivate
+                                            </button>
+                                        </form>
+                                        {% else %}
+                                        <form action="{{ url_for('admin.activate_api_key', key_id=key.id) }}" method="post">
+                                            <button type="submit" class="btn btn-success btn-sm">
+                                                <i class="fas fa-toggle-on"></i> Activate
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center">
+                                        <em>No API keys configured</em>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card bg-dark">
+                <div class="card-header">
+                    <h4 class="mb-0">Add/Update API Key</h4>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('admin.manage_api_keys') }}" method="post">
+                        <div class="mb-3">
+                            <label for="service" class="form-label">Service</label>
+                            <select class="form-select bg-dark text-white" id="service" name="service" required>
+                                <option value="" selected disabled>-- Select Service --</option>
+                                <option value="odds_api">Odds API</option>
+                                <option value="weather_api">Weather API</option>
+                                <option value="discovery_lab">Discovery Lab API</option>
+                                <option value="sportsdataio">SportsDataIO API</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="key" class="form-label">API Key</label>
+                            <input type="text" class="form-control bg-dark text-white" id="key" name="key" required placeholder="Enter your API key">
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save API Key
+                        </button>
+                    </form>
+                    
+                    <div class="card bg-dark border-secondary mt-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">API Key Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Odds API:</strong> Used to fetch betting odds from various sportsbooks. <a href="https://the-odds-api.com" target="_blank">Get Key</a></p>
+                            <p><strong>Weather API:</strong> Used to fetch weather forecasts for game locations. <a href="https://www.weatherapi.com" target="_blank">Get Key</a></p>
+                            <p><strong>Discovery Lab API:</strong> Used for advanced statistics and insights. Optional.</p>
+                            <p><strong>SportsDataIO API:</strong> Used to fetch team, player, and game statistics. <a href="https://sportsdata.io" target="_blank">Get Key</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

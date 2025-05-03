@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>MLB Betting Engine - Admin Panel</h1>
+    
+    <div class="alert alert-info mt-4">
+        <h4>Scheduler Status</h4>
+        <p>
+            Current status: <strong>{{ scheduler_status }}</strong>
+            {% if scheduler_status == 'Running' %}
+                <a href="{{ url_for('admin.stop_scheduler') }}" class="btn btn-sm btn-danger">Stop Scheduler</a>
+            {% else %}
+                <a href="{{ url_for('admin.start_scheduler') }}" class="btn btn-sm btn-success">Start Scheduler</a>
+            {% endif %}
+        </p>
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            <h4>Manual Data Updates</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5>Core Data</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <a href="{{ url_for('admin.update_teams') }}" class="btn btn-primary">Update Teams</a>
+                                <span class="text-muted small">Fetch all MLB teams</span>
+                            </div>
+                            <div class="mb-2">
+                                <a href="{{ url_for('admin.update_games') }}" class="btn btn-primary">Update Games</a>
+                                <span class="text-muted small">Fetch games for the next week</span>
+                            </div>
+                            <div class="mb-2">
+                                <a href="{{ url_for('admin.update_player_stats') }}" class="btn btn-primary">Update Player Stats</a>
+                                <span class="text-muted small">Fetch player statistics</span>
+                            </div>
+                            <div class="mb-2">
+                                <a href="{{ url_for('admin.update_injuries') }}" class="btn btn-primary">Update Injuries</a>
+                                <span class="text-muted small">Fetch current injuries</span>
+                            </div>
+                            <div class="mb-2">
+                                <a href="{{ url_for('admin.update_lineups') }}" class="btn btn-primary">Update Lineups</a>
+                                <span class="text-muted small">Fetch today's starting lineups</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5>Betting Data</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <a href="{{ url_for('admin.update_weather') }}" class="btn btn-primary">Update Weather</a>
+                                <span class="text-muted small">Fetch weather for upcoming games</span>
+                            </div>
+                            <div class="mb-2">
+                                <a href="{{ url_for('admin.update_odds') }}" class="btn btn-primary">Update Odds</a>
+                                <span class="text-muted small">Fetch current betting odds</span>
+                            </div>
+                            <div class="mb-2">
+                                <a href="{{ url_for('admin.generate_predictions') }}" class="btn btn-primary">Generate Predictions</a>
+                                <span class="text-muted small">Create predictions for upcoming games</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Full Update</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <a href="{{ url_for('admin.fetch_initial_data') }}" class="btn btn-danger">Fetch All Data</a>
+                                <span class="text-muted small">Fetch all data (may take a while)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            <h4>Recent Data Updates</h4>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Task</th>
+                        <th>Status</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ log.timestamp }}</td>
+                        <td>{{ log.task }}</td>
+                        <td>
+                            {% if log.success %}
+                            <span class="badge bg-success">Success</span>
+                            {% else %}
+                            <span class="badge bg-danger">Failed</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ log.details }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4">No logs available</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            <h4>API Configuration</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5>API Status</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-2">
+                                SportsDataIO: 
+                                {% if api_status.sportsdataio %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </p>
+                            <p class="mb-2">
+                                Odds API: 
+                                {% if api_status.odds_api %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </p>
+                            <p class="mb-2">
+                                Weather API: 
+                                {% if api_status.weather_api %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </p>
+                            <p class="mb-2">
+                                Discovery Lab API: 
+                                {% if api_status.discovery_lab %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-warning">Backup</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5>Set API Keys</h5>
+                        </div>
+                        <div class="card-body">
+                            <form action="{{ url_for('admin.update_api_keys') }}" method="POST">
+                                <div class="mb-3">
+                                    <label for="odds_api_key" class="form-label">Odds API Key</label>
+                                    <input type="text" class="form-control" id="odds_api_key" name="odds_api_key" placeholder="Enter your Odds API key">
+                                    <div class="form-text">Get a key at <a href="https://the-odds-api.com" target="_blank">the-odds-api.com</a></div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="weather_api_key" class="form-label">Weather API Key</label>
+                                    <input type="text" class="form-control" id="weather_api_key" name="weather_api_key" placeholder="Enter your Weather API key">
+                                    <div class="form-text">Get a key at <a href="https://weatherapi.com" target="_blank">weatherapi.com</a></div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="discovery_lab_api_key" class="form-label">Discovery Lab API Key</label>
+                                    <input type="text" class="form-control" id="discovery_lab_api_key" name="discovery_lab_api_key" placeholder="Enter your Discovery Lab API key">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save API Keys</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

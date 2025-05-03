@@ -1,0 +1,15 @@
+
+                <!DOCTYPE html>
+                <html>
+                <head><title>Test</title></head>
+                <body>
+                    <h1>Test Template</h1>
+                    <p>Game count: {{ upcoming_games|length }}</p>
+                    <ul>
+                    {% for game in upcoming_games %}
+                        <li>{{ game.away_team.name }} @ {{ game.home_team.name }} - {{ game.game_datetime }}</li>
+                    {% endfor %}
+                    </ul>
+                </body>
+                </html>
+                

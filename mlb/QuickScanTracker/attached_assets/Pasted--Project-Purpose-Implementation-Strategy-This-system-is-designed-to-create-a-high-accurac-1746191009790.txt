@@ -1,0 +1,37 @@
+### 🧠 Project Purpose & Implementation Strategy
+
+This system is designed to create a high-accuracy, data-driven MLB betting engine that:
+
+* Predicts what will **actually happen** in games based on real stats, not just sportsbook lines
+* Surfaces **mispriced or overlooked betting opportunities** (e.g., games the book has undervalued)
+* Combines both **real-time feeds** (odds, weather) and **scheduled insights** (lineups, advanced stat pulls)
+* Applies **advanced prediction methods** such as Bayesian calibration, ensemble models, simulation, and correlated outcome analysis
+* Uses **strictly live or historical API-fed data** only — no static, mock, or fictional data in testing or production
+
+### Key Principles:
+
+* **Model probability first**, then compare to sportsbook pricing
+* **Calibrated predictions** matter more than just chasing value
+* **Sharp-aware edges + real-time data = long-term profit**
+* **Data simulation and correlation modeling** enhances parlay and prop predictions
+* **No imaginary data allowed at any layer** — if testing is needed, it must use **real historical API data**
+
+### Implementation Structure:
+
+* ⚙️ Node.js backend pulls and stores odds from both OddsAPI and Discovery Lab
+* 🧠 Python layer uses Statcast (xwOBA, barrel %, etc.) to detect high-leverage player trends
+* 🌦️ WeatherAPI adds forecast-based context (e.g., wind boost for overs)
+* 🧮 Prediction engine includes:
+
+  * Bayesian probability calibration
+  * SHAP-based feature influence tracking
+  * Ensemble model logic (CatBoost + simulation blend)
+  * Correlation-aware parlay optimization
+  * Contrarian betting filters and sharp-vs-public signals
+  * Model confidence scoring per game (based on data depth, weather, lineup status)
+  * Injury impact modeling (WAR-level effects or lineup run value deltas)
+  * Umpire-adjusted strikeout and run projections (if ump is known)
+* 📈 Performance logging for daily model outcomes (predicted vs actual, ROI by bet type)
+* 🔔 Optional alerting via webhook (flag Book Misses, live edges, or correlated parlays)
+
+All data must be **sourced directly from live APIs or past historical feeds**. **No mock or manually created records** are permitted. This ensures all logic and models remain accurate, trustworthy, and production-safe.

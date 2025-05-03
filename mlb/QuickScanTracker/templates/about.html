@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}MLB Betting Engine - About{% endblock %}
+
+{% block content %}
+<div class="card bg-dark border-light mb-4">
+    <div class="card-body p-4">
+        <h1 class="mb-4 text-center">About the MLB Betting Engine</h1>
+        
+        <div class="row mb-5">
+            <div class="col-md-10 offset-md-1">
+                <div class="alert alert-primary">
+                    <h4 class="alert-heading">Project Purpose</h4>
+                    <p>This system is designed to create a high-accuracy, data-driven MLB betting engine that:</p>
+                    <ul>
+                        <li>Predicts what will <strong>actually happen</strong> in games based on real stats, not just sportsbook lines</li>
+                        <li>Surfaces <strong>mispriced or overlooked betting opportunities</strong> (e.g., games the book has undervalued)</li>
+                        <li>Combines both <strong>real-time feeds</strong> (odds, weather) and <strong>scheduled insights</strong> (lineups, advanced stat pulls)</li>
+                        <li>Applies <strong>advanced prediction methods</strong> such as Bayesian calibration, ensemble models, simulation, and correlated outcome analysis</li>
+                        <li>Uses <strong>strictly live or historical API-fed data</strong> only — no static, mock, or fictional data in testing or production</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-5">
+            <div class="col-md-12">
+                <h2 class="mb-4">Key Principles</h2>
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100 bg-dark border-light">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-percentage text-primary me-2"></i> Model Probability First</h5>
+                                <p class="card-text">We focus on accurately predicting game outcomes based on real data, then compare to sportsbook pricing. This approach allows us to spot true value rather than just reacting to line movements.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100 bg-dark border-light">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-balance-scale text-primary me-2"></i> Calibrated Predictions</h5>
+                                <p class="card-text">Our models use Bayesian calibration to ensure that a 70% win probability actually wins 70% of the time. This calibration is essential for proper bankroll management and expected value calculations.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100 bg-dark border-light">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-chart-line text-primary me-2"></i> Sharp-Aware Edges</h5>
+                                <p class="card-text">We track both public and sharp betting patterns to identify where the most informed money is going. Combined with our statistical models, this creates a powerful predictor of future line movements.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100 bg-dark border-light">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-random text-primary me-2"></i> Data Simulation & Correlation</h5>
+                                <p class="card-text">Our system runs thousands of game simulations to model interdependencies between outcomes. This helps identify valuable parlay opportunities where the true joint probability exceeds the implied odds.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-5">
+            <div class="col-md-12">
+                <h2 class="mb-4">Implementation Structure</h2>
+                <div class="implementation-diagram mb-4">
+                    <div class="row text-center">
+                        <div class="col-md-12">
+                            <div class="data-flow-diagram">
+                                <div class="data-sources p-3 mb-4">
+                                    <h5>Data Sources</h5>
+                                    <div class="row">
+                                        <div class="col">
+                                            <div class="source-box">
+                                                <i class="fas fa-money-bill-wave"></i>
+                                                <span>OddsAPI</span>
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="source-box">
+                                                <i class="fas fa-flask"></i>
+                                                <span>Discovery Lab</span>
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="source-box">
+                                                <i class="fas fa-baseball-ball"></i>
+                                                <span>MLB Statcast</span>
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="source-box">
+                                                <i class="fas fa-cloud-sun"></i>
+                                                <span>WeatherAPI</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="processing-layer p-3 mb-4">
+                                    <h5>Processing & Modeling</h5>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="process-box">
+                                                <i class="fas fa-calculator"></i>
+                                                <span>Bayesian Calibration</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="process-box">
+                                                <i class="fas fa-chart-pie"></i>
+                                                <span>SHAP Analysis</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="process-box">
+                                                <i class="fas fa-brain"></i>
+                                                <span>Ensemble Models</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="process-box">
+                                                <i class="fas fa-network-wired"></i>
+                                                <span>Correlation Analysis</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="output-layer p-3">
+                                    <h5>Output & Analysis</h5>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="output-box">
+                                                <i class="fas fa-search-dollar"></i>
+                                                <span>Value Bets</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="output-box">
+                                                <i class="fas fa-chart-bar"></i>
+                                                <span>Performance Tracking</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="output-box">
+                                                <i class="fas fa-bell"></i>
+                                                <span>Betting Insights</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card bg-dark border-light">
+                    <div class="card-body">
+                        <h4 class="card-title mb-3">System Components</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="component-list">
+                                    <li>
+                                        <i class="fas fa-server text-primary"></i>
+                                        <strong>Node.js backend</strong> pulls and stores odds from both OddsAPI and Discovery Lab
+                                    </li>
+                                    <li>
+                                        <i class="fab fa-python text-primary"></i>
+                                        <strong>Python layer</strong> uses Statcast (xwOBA, barrel %, etc.) to detect high-leverage player trends
+                                    </li>
+                                    <li>
+                                        <i class="fas fa-cloud-sun-rain text-primary"></i>
+                                        <strong>WeatherAPI</strong> adds forecast-based context (e.g., wind boost for overs)
+                                    </li>
+                                    <li>
+                                        <i class="fas fa-database text-primary"></i>
+                                        <strong>SQL Database</strong> stores historical predictions, results and performance metrics
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="component-list">
+                                    <li>
+                                        <i class="fas fa-brain text-primary"></i>
+                                        <strong>Prediction engine</strong> includes Bayesian calibration, SHAP analysis, ensemble modeling
+                                    </li>
+                                    <li>
+                                        <i class="fas fa-project-diagram text-primary"></i>
+                                        <strong>Correlation modeling</strong> for parlay optimization and related outcome analysis
+                                    </li>
+                                    <li>
+                                        <i class="fas fa-chart-line text-primary"></i>
+                                        <strong>Performance logging</strong> for daily model outcomes (predicted vs actual, ROI by bet type)
+                                    </li>
+                                    <li>
+                                        <i class="fas fa-filter text-primary"></i>
+                                        <strong>Contrarian betting filters</strong> and sharp-vs-public signals
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-12">
+                <h2 class="mb-4">Data Integrity</h2>
+                <div class="alert alert-info">
+                    <p class="mb-0">All data is <strong>sourced directly from live APIs or past historical feeds</strong>. <strong>No mock or manually created records</strong> are permitted. This ensures all logic and models remain accurate, trustworthy, and production-safe.</p>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card bg-dark border-light h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">Data Refresh Cycles</h5>
+                                <ul class="cycle-list">
+                                    <li><i class="fas fa-sync-alt"></i> Odds: Updated every 15 minutes</li>
+                                    <li><i class="fas fa-sync-alt"></i> Weather: Updated hourly</li>
+                                    <li><i class="fas fa-sync-alt"></i> Statistical data: Updated every 12 hours</li>
+                                    <li><i class="fas fa-sync-alt"></i> Model performance: Updated daily</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-dark border-light h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">Technical Details</h5>
+                                <ul class="tech-list">
+                                    <li><i class="fab fa-python"></i> Python backend with Flask web framework</li>
+                                    <li><i class="fas fa-database"></i> SQL database for data storage</li>
+                                    <li><i class="fas fa-chart-bar"></i> Pandas & NumPy for data analysis</li>
+                                    <li><i class="fas fa-brain"></i> CatBoost & scikit-learn for modeling</li>
+                                    <li><i class="fas fa-chart-pie"></i> SHAP for model interpretation</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

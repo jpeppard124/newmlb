@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Debug Page{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">MLB Betting Predictions - Debug Page</h1>
+    
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{ error }}
+    </div>
+    {% endif %}
+    
+    <h2>Game Information</h2>
+    <p>Total games in database: {{ upcoming_games|length }}</p>
+    
+    {% if upcoming_games %}
+    <div class="row">
+        {% for game in upcoming_games %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 bg-dark">
+                <div class="card-header">
+                    <span>{{ game.game_datetime|date }} at {{ game.game_datetime|time }}</span>
+                </div>
+                <div class="card-body">
+                    <h5>{{ game.away_team.name }} @ {{ game.home_team.name }}</h5>
+                    <p>Stadium: {{ game.stadium }}</p>
+                    <p>Status: {{ game.status }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        No upcoming games found.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

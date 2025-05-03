@@ -1,0 +1,384 @@
+{% extends 'base.html' %}
+
+{% block title %}MLB Betting Prediction Engine{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">MLB Betting Predictions</h1>
+    
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{ error }}
+    </div>
+    {% endif %}
+    
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card mb-4 bg-dark text-white">
+                <div class="card-header">
+                    <h4>Performance Summary (Last 7 Days)</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4 mb-3">
+                            <h5>Overall ROI</h5>
+                            <h2 class="{{ 'text-success' if overall_roi|default(0) > 0 else 'text-danger' }}">
+                                {{ "%.2f"|format(overall_roi|default(0)) }}%
+                            </h2>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <h5>Total Bets</h5>
+                            <h2>
+                                {% if performance_summary|default([]) %}
+                                    {% set total_bets = performance_summary|sum(attribute='total_bets') %}
+                                    {{ total_bets }}
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </h2>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <h5>Winning Bets</h5>
+                            <h2>
+                                {% if performance_summary|default([]) %}
+                                    {% set total_bets = performance_summary|sum(attribute='total_bets') %}
+                                    {% set winning_bets = performance_summary|sum(attribute='winning_bets') %}
+                                    {{ winning_bets }}
+                                    ({{ "%.1f"|format(winning_bets/total_bets*100) if total_bets else 0 }}%)
+                                {% else %}
+                                    0 (0%)
+                                {% endif %}
+                            </h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Today's Games ({{ today|default('Today')|date }})</h2>
+        <div>
+            <a href="{{ url_for('api.update_games', _method='GET') }}" class="btn btn-primary me-2" id="updateGamesBtn">
+                <i class="fas fa-sync me-1"></i> Update Games
+            </a>
+            <a href="{{ url_for('api.generate_predictions') }}" class="btn btn-success" id="generatePredictionsBtn">
+                <i class="fas fa-robot me-1"></i> <span id="generateBtnText">Generate All Predictions</span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Loading indicator (hidden by default) -->
+    <div id="loadingIndicator" class="alert alert-info d-none">
+        <div class="d-flex align-items-center">
+            <div class="spinner-border spinner-border-sm me-2" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div>
+                <strong>Processing:</strong> <span id="loadingMessage">Generating predictions for all games. This may take a minute...</span>
+            </div>
+        </div>
+    </div>
+    
+    {% if upcoming_games %}
+    <div class="row">
+        {% for game in upcoming_games %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 bg-dark">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>{{ game.game_datetime|date }} at {{ game.game_datetime|time }}</span>
+                    <div>
+                        <span class="badge bg-info me-1" title="Data Source">
+                            {% if game.game_id|length > 10 %}Odds API{% else %}SportsDataIO{% endif %}
+                        </span>
+                        <span class="badge {{ 'bg-primary' if game.status == 'scheduled' else 'bg-warning' }}">
+                            {{ game.status|title }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-5 text-center">
+                            <h5>{{ game.away_team.name }}</h5>
+                        </div>
+                        <div class="col-2 text-center">
+                            <span class="fw-bold">@</span>
+                        </div>
+                        <div class="col-5 text-center">
+                            <h5>{{ game.home_team.name }}</h5>
+                        </div>
+                    </div>
+                    
+                    {% if game.id in game_predictions %}
+                    {% set prediction = game_predictions[game.id] %}
+                    <div class="row">
+                        <div class="col-12 text-center mb-3">
+                            <h6>Prediction</h6>
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-danger" role="progressbar" 
+                                     style="width: {{ (1-prediction.home_win_probability)*100 }}%"
+                                     aria-valuenow="{{ (1-prediction.home_win_probability)*100 }}" 
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    {{ game.away_team.abbreviation }} {{ "%.0f"|format((1-prediction.home_win_probability)*100) }}%
+                                </div>
+                                <div class="progress-bar bg-primary" role="progressbar" 
+                                     style="width: {{ prediction.home_win_probability*100 }}%"
+                                     aria-valuenow="{{ prediction.home_win_probability*100 }}" 
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    {{ game.home_team.abbreviation }} {{ "%.0f"|format(prediction.home_win_probability*100) }}%
+                                </div>
+                            </div>
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <small>{{ "%.1f"|format(prediction.predicted_away_runs) }} runs</small>
+                                </div>
+                                <div class="col-4">
+                                    <small>Total: {{ "%.1f"|format(prediction.predicted_total_runs) }}</small>
+                                </div>
+                                <div class="col-4">
+                                    <small>{{ "%.1f"|format(prediction.predicted_home_runs) }} runs</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if prediction.recommended_bet != 'No Value' %}
+                    <div class="alert alert-success">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong><i class="fas fa-check-circle me-1"></i> Recommended Bet:</strong> 
+                                {{ prediction.recommended_bet }}
+                            </div>
+                            <div>
+                                {% if prediction.recommended_bet == 'Home Moneyline' %}
+                                    <span class="badge bg-success">{{ "%.1f"|format(prediction.home_moneyline_value) }}%</span>
+                                {% elif prediction.recommended_bet == 'Away Moneyline' %}
+                                    <span class="badge bg-success">{{ "%.1f"|format(prediction.away_moneyline_value) }}%</span>
+                                {% elif prediction.recommended_bet == 'Over' %}
+                                    <span class="badge bg-success">{{ "%.1f"|format(prediction.over_value) }}%</span>
+                                {% elif prediction.recommended_bet == 'Under' %}
+                                    <span class="badge bg-success">{{ "%.1f"|format(prediction.under_value) }}%</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-1"></i> <strong>No Value Bets</strong> - Insufficient edge in available markets
+                    </div>
+                    {% endif %}
+                    
+                    {% else %}
+                    <div class="text-center py-3">
+                        <em>No prediction available</em>
+                        <div class="mt-2">
+                            <a href="{{ url_for('main.generate_prediction', game_id=game.id) }}" 
+                               class="btn btn-primary btn-sm">Generate Prediction</a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{{ url_for('main.game_detail', game_id=game.id) }}" 
+                       class="btn btn-secondary btn-sm">View Details</a>
+                    
+                    <!-- Button to view available odds -->
+                    <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#oddsModal{{ game.id }}">
+                        View Odds
+                    </button>
+                    
+                    <!-- Odds Modal -->
+                    <div class="modal fade" id="oddsModal{{ game.id }}" tabindex="-1" aria-labelledby="oddsModalLabel{{ game.id }}" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="oddsModalLabel{{ game.id }}">
+                                        {{ game.away_team.name }} @ {{ game.home_team.name }} - Odds
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div id="odds-loading{{ game.id }}" class="text-center py-4">
+                                        <div class="spinner-border" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="mt-2">Loading odds data...</p>
+                                    </div>
+                                    <div id="odds-content{{ game.id }}" style="display:none;">
+                                        <!-- Odds content will be loaded here -->
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        No upcoming games scheduled for today.
+    </div>
+    {% endif %}
+    
+    <div class="text-center mt-4">
+        <a href="{{ url_for('main.predictions') }}" class="btn btn-primary">View All Predictions</a>
+        <a href="{{ url_for('main.performance') }}" class="btn btn-info">View Performance Stats</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Function to handle prediction generation
+document.addEventListener('DOMContentLoaded', function() {
+    const generateBtn = document.getElementById('generatePredictionsBtn');
+    const updateBtn = document.getElementById('updateGamesBtn');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const generateBtnText = document.getElementById('generateBtnText');
+    
+    if (generateBtn) {
+        generateBtn.addEventListener('click', function(e) {
+            e.preventDefault(); // Prevent default link behavior
+            
+            // Show loading indicator
+            loadingIndicator.classList.remove('d-none');
+            generateBtnText.textContent = 'Generating...';
+            generateBtn.classList.add('disabled');
+            
+            // Navigate to the generate predictions URL
+            window.location.href = generateBtn.getAttribute('href');
+        });
+    }
+    
+    if (updateBtn) {
+        updateBtn.addEventListener('click', function(e) {
+            e.preventDefault(); // Prevent default link behavior
+            
+            // Show loading indicator with different message
+            document.getElementById('loadingMessage').textContent = 'Updating games data. This may take a moment...';
+            loadingIndicator.classList.remove('d-none');
+            updateBtn.classList.add('disabled');
+            
+            // Navigate to the update games URL
+            window.location.href = updateBtn.getAttribute('href');
+        });
+    }
+});
+
+// Function to format odds value correctly
+function formatOdds(oddsValue) {
+    if (!oddsValue) return 'N/A';
+    return oddsValue > 0 ? '+' + oddsValue : oddsValue;
+}
+
+// Function to load odds data
+function loadOddsData(gameId) {
+    const loadingElement = document.getElementById(`odds-loading${gameId}`);
+    const contentElement = document.getElementById(`odds-content${gameId}`);
+    
+    // Show loading spinner
+    loadingElement.style.display = 'block';
+    contentElement.style.display = 'none';
+    
+    // Fetch odds data from API
+    fetch(`/api/game_odds/${gameId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Create HTML for the odds table
+                let html = `
+                    <h6 class="text-center mb-3">${data.game.away_team} @ ${data.game.home_team}</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-dark">
+                            <thead>
+                                <tr>
+                                    <th>Sportsbook</th>
+                                    <th>${data.game.away_team} ML</th>
+                                    <th>${data.game.home_team} ML</th>
+                                    <th>Spread</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                // Group odds by sportsbook (most recent for each)
+                const sportsbookMap = {};
+                data.odds.forEach(odds => {
+                    if (!sportsbookMap[odds.sportsbook] || 
+                        new Date(odds.timestamp) > new Date(sportsbookMap[odds.sportsbook].timestamp)) {
+                        sportsbookMap[odds.sportsbook] = odds;
+                    }
+                });
+                
+                // Add rows for each sportsbook
+                Object.values(sportsbookMap).forEach(odds => {
+                    html += `
+                        <tr>
+                            <td>${odds.sportsbook}</td>
+                            <td>${formatOdds(odds.away_moneyline)}</td>
+                            <td>${formatOdds(odds.home_moneyline)}</td>
+                            <td>${odds.home_spread} (${formatOdds(odds.home_spread_odds)})</td>
+                            <td>O/U ${odds.total_over_under} (${formatOdds(odds.over_odds)}/${formatOdds(odds.under_odds)})</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center text-muted">
+                        <small>Last updated: ${new Date(Object.values(sportsbookMap)[0]?.timestamp || Date.now()).toLocaleString()}</small>
+                    </div>
+                `;
+                
+                // Update the content element
+                contentElement.innerHTML = html;
+                
+                // Hide loading spinner, show content
+                loadingElement.style.display = 'none';
+                contentElement.style.display = 'block';
+            } else {
+                // Handle error
+                contentElement.innerHTML = `
+                    <div class="alert alert-warning">
+                        No odds data available for this game.
+                    </div>
+                `;
+                
+                loadingElement.style.display = 'none';
+                contentElement.style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching odds data:', error);
+            contentElement.innerHTML = `
+                <div class="alert alert-danger">
+                    Error loading odds data. Please try again.
+                </div>
+            `;
+            
+            loadingElement.style.display = 'none';
+            contentElement.style.display = 'block';
+        });
+}
+
+// Attach event listeners to modal show events
+document.addEventListener('DOMContentLoaded', function() {
+    const modals = document.querySelectorAll('[id^="oddsModal"]');
+    
+    modals.forEach(modal => {
+        modal.addEventListener('show.bs.modal', function(event) {
+            const gameId = this.id.replace('oddsModal', '');
+            loadOddsData(gameId);
+        });
+    });
+});
+</script>
+{% endblock %}

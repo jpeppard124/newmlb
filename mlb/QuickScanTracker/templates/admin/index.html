@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Panel | MLB Betting Prediction Engine{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">Admin Panel</h1>
+    
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{ error }}
+    </div>
+    {% endif %}
+    
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-dark h-100">
+                <div class="card-header">
+                    <h4 class="mb-0">API Keys</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group mb-3">
+                        {% for key in api_keys %}
+                        <li class="list-group-item bg-dark text-white border-secondary d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ key.service }}</strong><br>
+                                <small class="text-muted">{{ key.key[:4] }}...{{ key.key[-4:] }}</small>
+                            </div>
+                            <span class="badge {% if key.active %}bg-success{% else %}bg-danger{% endif %}">
+                                {% if key.active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item bg-dark text-white border-secondary">
+                            <em>No API keys configured</em>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <a href="{{ url_for('admin.manage_api_keys') }}" class="btn btn-primary">
+                        <i class="fas fa-key"></i> Manage API Keys
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card bg-dark h-100">
+                <div class="card-header">
+                    <h4 class="mb-0">System Stats</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group mb-3">
+                        <li class="list-group-item bg-dark text-white border-secondary d-flex justify-content-between align-items-center">
+                            <span>Total Teams</span>
+                            <span class="badge bg-primary">{{ stats.team_count }}</span>
+                        </li>
+                        <li class="list-group-item bg-dark text-white border-secondary d-flex justify-content-between align-items-center">
+                            <span>Total Games</span>
+                            <span class="badge bg-primary">{{ stats.game_count }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card bg-dark h-100">
+                <div class="card-header">
+                    <h4 class="mb-0">Recent Updates</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group mb-3">
+                        {% for log in update_logs %}
+                        <li class="list-group-item bg-dark text-white border-secondary">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>{{ log.task }}</strong>
+                                <span class="badge {% if log.success %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if log.success %}Success{% else %}Failed{% endif %}
+                                </span>
+                            </div>
+                            <small class="text-muted">{{ log.timestamp|date }} {{ log.timestamp|time }}</small>
+                            {% if not log.success and log.details %}
+                            <div class="text-danger mt-1">{{ log.details }}</div>
+                            {% endif %}
+                        </li>
+                        {% else %}
+                        <li class="list-group-item bg-dark text-white border-secondary">
+                            <em>No recent updates</em>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <a href="{{ url_for('admin.view_logs') }}" class="btn btn-secondary">
+                        <i class="fas fa-list"></i> View All Logs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card bg-dark">
+                <div class="card-header">
+                    <h4 class="mb-0">Manual Tasks</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="card bg-dark border-secondary h-100">
+                                <div class="card-body">
+                                    <h5>Update Games</h5>
+                                    <p class="text-muted">Fetch the latest games from the MLB schedule</p>
+                                    <form action="{{ url_for('admin.admin_update_games') }}" method="post">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-sync-alt"></i> Update Games
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <div class="card bg-dark border-secondary h-100">
+                                <div class="card-body">
+                                    <h5>Update Odds</h5>
+                                    <p class="text-muted">Fetch the latest betting odds from sportsbooks</p>
+                                    <form action="{{ url_for('admin.admin_update_odds') }}" method="post">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-sync-alt"></i> Update Odds
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <div class="card bg-dark border-secondary h-100">
+                                <div class="card-body">
+                                    <h5>Update Weather</h5>
+                                    <p class="text-muted">Fetch the latest weather forecasts for games</p>
+                                    <form action="{{ url_for('admin.admin_update_weather') }}" method="post">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-sync-alt"></i> Update Weather
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <div class="card bg-dark border-secondary h-100">
+                                <div class="card-body">
+                                    <h5>Update Stats</h5>
+                                    <p class="text-muted">Fetch the latest player and team statistics</p>
+                                    <form action="{{ url_for('admin.admin_update_stats') }}" method="post">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-sync-alt"></i> Update Stats
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <div class="card bg-dark border-secondary h-100">
+                                <div class="card-body">
+                                    <h5>Generate Predictions</h5>
+                                    <p class="text-muted">Generate predictions for upcoming games</p>
+                                    <form action="{{ url_for('admin.admin_generate_predictions') }}" method="post">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-magic"></i> Generate Predictions
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card bg-dark">
+                <div class="card-header">
+                    <h4 class="mb-0">Scheduler Settings</h4>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('admin.update_scheduler') }}" method="post">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="form-group">
+                                    <label for="odds_interval">Odds Update Interval (minutes)</label>
+                                    <input type="number" class="form-control bg-dark text-white" id="odds_interval" name="odds_interval" value="15" min="5" max="60">
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-group">
+                                    <label for="weather_interval">Weather Update Interval (hours)</label>
+                                    <input type="number" class="form-control bg-dark text-white" id="weather_interval" name="weather_interval" value="1" min="1" max="24">
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-group">
+                                    <label for="stats_interval">Stats Update Interval (hours)</label>
+                                    <input type="number" class="form-control bg-dark text-white" id="stats_interval" name="stats_interval" value="12" min="1" max="24">
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Settings
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

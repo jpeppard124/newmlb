@@ -1,0 +1,851 @@
+{% extends 'base.html' %}
+
+{% block title %}Game Details | MLB Betting Prediction Engine{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="mb-4 d-flex justify-content-between">
+        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Games
+        </a>
+        
+        <div class="btn-group">
+            {% if not prediction %}
+            <a href="{{ url_for('main.generate_prediction', game_id=game.id) }}" class="btn btn-primary">
+                <i class="fas fa-dice"></i> Generate Prediction
+            </a>
+            {% else %}
+            <a href="{{ url_for('main.generate_prediction', game_id=game.id) }}" class="btn btn-outline-primary">
+                <i class="fas fa-sync-alt"></i> Update Prediction
+            </a>
+            {% endif %}
+            
+            <a href="{{ url_for('main.update_odds', game_id=game.id) }}" class="btn btn-outline-info">
+                <i class="fas fa-dollar-sign"></i> Update Odds
+            </a>
+        </div>
+    </div>
+    
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{ error }}
+    </div>
+    {% endif %}
+    
+    <div class="card bg-dark mb-4">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">Game Details</h3>
+                <span class="badge {{ 'bg-primary' if game.status == 'scheduled' else 'bg-warning' }}">
+                    {{ game.status|title }}
+                </span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-5 text-center">
+                    <h4>{{ game.away_team.name }}</h4>
+                    {% if game.away_score is not none %}
+                    <h2>{{ game.away_score }}</h2>
+                    {% endif %}
+                </div>
+                <div class="col-md-2 text-center d-flex flex-column justify-content-center">
+                    <div>
+                        <span class="h4">@</span>
+                    </div>
+                    <div class="mt-2">
+                        <span class="badge bg-secondary">{{ game.game_datetime|date }} {{ game.game_datetime|time }}</span>
+                    </div>
+                </div>
+                <div class="col-md-5 text-center">
+                    <h4>{{ game.home_team.name }}</h4>
+                    {% if game.home_score is not none %}
+                    <h2>{{ game.home_score }}</h2>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <div class="card bg-dark border-secondary">
+                        <div class="card-header">
+                            <h5 class="mb-0">Stadium & Weather</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Stadium:</strong> {{ game.stadium }}</p>
+                                </div>
+                                {% if weather %}
+                                <div class="col-md-6">
+                                    <p><strong>Weather:</strong> {{ weather.weather_description }}</p>
+                                    <p><strong>Temperature:</strong> {{ weather.temperature }}°F</p>
+                                    <p><strong>Wind:</strong> {{ weather.wind_speed }} mph ({{ weather.wind_direction }})</p>
+                                    <p><strong>Humidity:</strong> {{ weather.humidity }}%</p>
+                                    <p><strong>Precipitation Chance:</strong> {{ weather.precipitation_chance }}%</p>
+                                </div>
+                                {% else %}
+                                <div class="col-md-6">
+                                    <p><em>Weather data not available</em></p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Prediction Details -->
+    {% if prediction %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card bg-dark">
+                <div class="card-header">
+                    <h4 class="mb-0">Prediction Details</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Win Probability -->
+                        <div class="col-md-6 mb-4">
+                            <h5>Win Probability</h5>
+                            <div class="progress mb-3" style="height: 30px;">
+                                <div class="progress-bar bg-danger" role="progressbar" 
+                                     style="width: {{ (1-prediction.home_win_probability)*100 }}%"
+                                     aria-valuenow="{{ (1-prediction.home_win_probability)*100 }}" 
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    {{ game.away_team.name }} {{ "%.1f"|format((1-prediction.home_win_probability)*100) }}%
+                                </div>
+                                <div class="progress-bar bg-primary" role="progressbar" 
+                                     style="width: {{ prediction.home_win_probability*100 }}%"
+                                     aria-valuenow="{{ prediction.home_win_probability*100 }}" 
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    {{ game.home_team.name }} {{ "%.1f"|format(prediction.home_win_probability*100) }}%
+                                </div>
+                            </div>
+                            <div class="text-center text-muted">
+                                <small>Confidence: {{ "%.1f"|format(prediction.home_win_confidence * 100) }}%</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Run Prediction -->
+                        <div class="col-md-6 mb-4">
+                            <h5>Run Prediction</h5>
+                            <div class="table-responsive">
+                                <table class="table table-dark">
+                                    <thead>
+                                        <tr>
+                                            <th>Team</th>
+                                            <th>Predicted Runs</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>{{ game.away_team.name }}</td>
+                                            <td>{{ "%.1f"|format(prediction.predicted_away_runs) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>{{ game.home_team.name }}</td>
+                                            <td>{{ "%.1f"|format(prediction.predicted_home_runs) }}</td>
+                                        </tr>
+                                        <tr class="table-active">
+                                            <td><strong>Total</strong></td>
+                                            <td><strong>{{ "%.1f"|format(prediction.predicted_total_runs) }}</strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="text-center text-muted">
+                                <small>Confidence: {{ "%.1f"|format(prediction.total_runs_confidence * 100) }}%</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recommended Bet -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="card bg-dark border-{{ 'success' if prediction.recommended_bet != 'No Value' else 'warning' }}">
+                                <div class="card-header bg-{{ 'success' if prediction.recommended_bet != 'No Value' else 'warning' }} text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas {{ 'fa-check-circle' if prediction.recommended_bet != 'No Value' else 'fa-exclamation-triangle' }} me-2"></i>
+                                        Recommended Bet
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if not odds %}
+                                        <p class="mb-0 alert alert-warning">No odds available for this game</p>
+                                    {% elif prediction.recommended_bet != 'No Value' %}
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h3 class="mb-0">{{ prediction.recommended_bet }}</h3>
+                                            <div>
+                                                {% if prediction.recommended_bet == 'Home Moneyline' %}
+                                                    <span class="badge bg-success">
+                                                        Edge: {{ "%.1f"|format(prediction.home_moneyline_value) }}%
+                                                    </span>
+                                                {% elif prediction.recommended_bet == 'Away Moneyline' %}
+                                                    <span class="badge bg-success">
+                                                        Edge: {{ "%.1f"|format(prediction.away_moneyline_value) }}%
+                                                    </span>
+                                                {% elif prediction.recommended_bet == 'Over' %}
+                                                    <span class="badge bg-success">
+                                                        Edge: {{ "%.1f"|format(prediction.over_value) }}%
+                                                    </span>
+                                                {% elif prediction.recommended_bet == 'Under' %}
+                                                    <span class="badge bg-success">
+                                                        Edge: {{ "%.1f"|format(prediction.under_value) }}%
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <p class="text-muted mt-2 mb-0">
+                                            Our model identifies a statistical edge in this betting market.
+                                        </p>
+                                    {% else %}
+                                        <p class="mb-0">No bets currently recommended for this game. All available markets show insufficient edge.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                        
+                    <!-- Prediction Explanation -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="card bg-dark border-info">
+                                <div class="card-header bg-info text-dark">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Why This Prediction?
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <h6 class="mb-3">Key Factors Influencing This Prediction:</h6>
+                                    
+                                    <div class="row">
+                                        <!-- Team Stats Comparison -->
+                                        <div class="col-md-6 mb-3">
+                                            <div class="card bg-dark border-secondary h-100">
+                                                <div class="card-header">
+                                                    <h6 class="mb-0">Team Performance</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="d-flex justify-content-between mb-2">
+                                                        <span>{{ game.away_team.name }} OPS:</span>
+                                                        <span>{{ "%.3f"|format(away_team_stats.ops if away_team_stats else 0) }}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between mb-2">
+                                                        <span>{{ game.home_team.name }} OPS:</span>
+                                                        <span>{{ "%.3f"|format(home_team_stats.ops if home_team_stats else 0) }}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between mb-2">
+                                                        <span>{{ game.away_team.name }} wOBA:</span>
+                                                        <span>{{ "%.3f"|format(away_team_stats.woba if away_team_stats else 0) }}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between mb-2">
+                                                        <span>{{ game.home_team.name }} wOBA:</span>
+                                                        <span>{{ "%.3f"|format(home_team_stats.woba if home_team_stats else 0) }}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between mb-2">
+                                                        <span>Run Differential:</span>
+                                                        <span class="{{ 'text-success' if (home_team_stats.runs_per_game if home_team_stats else 0) > (away_team_stats.runs_per_game if away_team_stats else 0) else 'text-danger' }}">
+                                                            {{ "%.1f"|format((home_team_stats.runs_per_game if home_team_stats else 0) - (away_team_stats.runs_per_game if away_team_stats else 0)) }}
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    {% if away_team_stats and away_team_stats.data_source %}
+                                                    <div class="small text-muted mt-3">
+                                                        <i class="fas fa-info-circle"></i> Away team data source: {{ away_team_stats.data_source }}
+                                                    </div>
+                                                    {% endif %}
+                                                    {% if home_team_stats and home_team_stats.data_source %}
+                                                    <div class="small text-muted">
+                                                        <i class="fas fa-info-circle"></i> Home team data source: {{ home_team_stats.data_source }}
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Park Factors Section -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-12">
+                                            <div class="card bg-dark border-secondary">
+                                                <div class="card-header">
+                                                    <h6 class="mb-0">Park & Weather Factors</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    {% if park_factors %}
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <h6 class="text-info">{{ game.stadium }} Park Factors</h6>
+                                                            <div class="d-flex justify-content-between mb-2">
+                                                                <span>Run Scoring Factor:</span>
+                                                                <span class="{{ 'text-success' if park_factors.runs_factor > 100 else 'text-danger' if park_factors.runs_factor < 100 else '' }}">
+                                                                    {{ park_factors.runs_factor }}
+                                                                    {% if park_factors.runs_factor > 100 %}
+                                                                    <i class="fas fa-arrow-up ml-1"></i>
+                                                                    {% elif park_factors.runs_factor < 100 %}
+                                                                    <i class="fas fa-arrow-down ml-1"></i>
+                                                                    {% endif %}
+                                                                </span>
+                                                            </div>
+                                                            <div class="d-flex justify-content-between mb-2">
+                                                                <span>Home Run Factor:</span>
+                                                                <span class="{{ 'text-success' if park_factors.hr_factor > 100 else 'text-danger' if park_factors.hr_factor < 100 else '' }}">
+                                                                    {{ park_factors.hr_factor }}
+                                                                    {% if park_factors.hr_factor > 100 %}
+                                                                    <i class="fas fa-arrow-up ml-1"></i>
+                                                                    {% elif park_factors.hr_factor < 100 %}
+                                                                    <i class="fas fa-arrow-down ml-1"></i>
+                                                                    {% endif %}
+                                                                </span>
+                                                            </div>
+                                                            <div class="d-flex justify-content-between mb-2">
+                                                                <span>Hits Factor:</span>
+                                                                <span class="{{ 'text-success' if park_factors.hits_factor > 100 else 'text-danger' if park_factors.hits_factor < 100 else '' }}">
+                                                                    {{ park_factors.hits_factor }}
+                                                                    {% if park_factors.hits_factor > 100 %}
+                                                                    <i class="fas fa-arrow-up ml-1"></i>
+                                                                    {% elif park_factors.hits_factor < 100 %}
+                                                                    <i class="fas fa-arrow-down ml-1"></i>
+                                                                    {% endif %}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            {% if park_factors.elevation %}
+                                                            <div class="d-flex justify-content-between mb-2">
+                                                                <span>Elevation:</span>
+                                                                <span>{{ park_factors.elevation }} ft</span>
+                                                            </div>
+                                                            {% endif %}
+                                                            {% if weather %}
+                                                            <h6 class="text-info mt-3">Weather-Adjusted Factors</h6>
+                                                            {% if park_factors.weather_adjusted_run_factor %}
+                                                            <div class="d-flex justify-content-between mb-2">
+                                                                <span>Weather-Adjusted Run Factor:</span>
+                                                                <span class="{{ 'text-success' if park_factors.weather_adjusted_run_factor > 100 else 'text-danger' if park_factors.weather_adjusted_run_factor < 100 else '' }}">
+                                                                    {{ "%.1f"|format(park_factors.weather_adjusted_run_factor) }}
+                                                                </span>
+                                                            </div>
+                                                            {% endif %}
+                                                            <div class="small text-muted mt-2">
+                                                                <i class="fas fa-info-circle mr-1"></i>
+                                                                Current conditions: {{ weather.temperature }}°F, {{ weather.weather_description }}, {{ weather.wind_speed }}mph winds
+                                                            </div>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mt-3">
+                                                        <div class="col-12">
+                                                            <div class="alert alert-info small">
+                                                                <i class="fas fa-info-circle mr-1"></i>
+                                                                Park factors measure how much a stadium affects offensive stats (100 is neutral, &gt;100 favors hitters, &lt;100 favors pitchers).
+                                                            </div>
+                                                            {% if park_factors and park_factors.data_source %}
+                                                            <div class="small text-muted mt-2">
+                                                                <i class="fas fa-info-circle"></i> Park factor data source: {{ park_factors.data_source }}
+                                                            </div>
+                                                            {% endif %}
+                                                            {% if weather and weather.data_source %}
+                                                            <div class="small text-muted">
+                                                                <i class="fas fa-info-circle"></i> Weather data source: {{ weather.data_source }}
+                                                            </div>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                    {% else %}
+                                                    <p><em>No park factor data available for this stadium.</em></p>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <!-- Pitching Matchup -->
+                                        <div class="col-md-6 mb-3">
+                                            <div class="card bg-dark border-secondary h-100">
+                                                <div class="card-header">
+                                                    <h6 class="mb-0">Pitching Matchup</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="d-flex justify-content-between mb-2">
+                                                        <span>{{ game.away_team.name }} Pitcher ERA:</span>
+                                                        <span>{{ "%.2f"|format(away_pitcher.era if away_pitcher else 0) }}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between mb-2">
+                                                        <span>{{ game.home_team.name }} Pitcher ERA:</span>
+                                                        <span>{{ "%.2f"|format(home_pitcher.era if home_pitcher else 0) }}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between mb-2">
+                                                        <span>{{ game.away_team.name }} Pitcher WHIP:</span>
+                                                        <span>{{ "%.2f"|format(away_pitcher.whip if away_pitcher else 0) }}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between mb-2">
+                                                        <span>{{ game.home_team.name }} Pitcher WHIP:</span>
+                                                        <span>{{ "%.2f"|format(home_pitcher.whip if home_pitcher else 0) }}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between">
+                                                        <span>Pitching Advantage:</span>
+                                                        {% if home_pitcher and away_pitcher %}
+                                                            {% if home_pitcher.era == away_pitcher.era %}
+                                                                <span>Even</span>
+                                                            {% elif home_pitcher.era < away_pitcher.era %}
+                                                                <span class="text-success">{{ game.home_team.name }}</span>
+                                                            {% else %}
+                                                                <span class="text-danger">{{ game.away_team.name }}</span>
+                                                            {% endif %}
+                                                        {% else %}
+                                                            <span>Unknown</span>
+                                                        {% endif %}
+                                                    </div>
+                                                    
+                                                    {% if away_pitcher and away_pitcher.data_source %}
+                                                    <div class="small text-muted mt-3">
+                                                        <i class="fas fa-info-circle"></i> Away pitcher data source: {{ away_pitcher.data_source }}
+                                                    </div>
+                                                    {% endif %}
+                                                    {% if home_pitcher and home_pitcher.data_source %}
+                                                    <div class="small text-muted">
+                                                        <i class="fas fa-info-circle"></i> Home pitcher data source: {{ home_pitcher.data_source }}
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <!-- Additional Factors -->
+                                        <div class="col-md-6 mb-3">
+                                            <div class="card bg-dark border-secondary h-100">
+                                                <div class="card-header">
+                                                    <h6 class="mb-0">Additional Factors</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    {% if weather %}
+                                                    <div class="d-flex justify-content-between mb-2">
+                                                        <span>Wind Impact:</span>
+                                                        <span class="{{ 'text-success' if weather.wind_speed < 10 else 'text-warning' }}">
+                                                            {{ "Low" if weather.wind_speed < 10 else "High" }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between mb-2">
+                                                        <span>Temperature:</span>
+                                                        <span class="{{ 'text-info' if weather.temperature < 60 else ('text-warning' if weather.temperature > 80 else 'text-success') }}">
+                                                            {{ weather.temperature }}°F ({{ "Cold" if weather.temperature < 60 else ("Hot" if weather.temperature > 80 else "Moderate") }})
+                                                        </span>
+                                                    </div>
+                                                    {% endif %}
+                                                    <div class="d-flex justify-content-between mb-2">
+                                                        <span>Home Field Advantage:</span>
+                                                        <span class="text-success">Yes (8% boost)</span>
+                                                    </div>
+                                                    
+                                                    {% if umpire_factors and umpire_factors.data_source %}
+                                                    <div class="small text-muted mt-3">
+                                                        <i class="fas fa-info-circle"></i> Umpire data source: {{ umpire_factors.data_source }}
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Market Comparison -->
+                                        <div class="col-md-6 mb-3">
+                                            <div class="card bg-dark border-secondary h-100">
+                                                <div class="card-header">
+                                                    <h6 class="mb-0">Market Comparison</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    {% if odds %}
+                                                    <div class="d-flex justify-content-between mb-2">
+                                                        <span>Market Implied {{ game.home_team.name }} Win%:</span>
+                                                        <span>{{ "%.1f"|format(odds.home_implied_probability * 100) }}%</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between mb-2">
+                                                        <span>Our Model {{ game.home_team.name }} Win%:</span>
+                                                        <span>{{ "%.1f"|format(prediction.home_win_probability * 100) }}%</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between mb-2">
+                                                        <span>Edge:</span>
+                                                        <span class="{{ 'text-success' if prediction.home_moneyline_value > 0 else 'text-danger' }}">
+                                                            {{ "%.1f"|format(prediction.home_moneyline_value) }}%
+                                                        </span>
+                                                    </div>
+                                                    {% if odds and odds.data_source %}
+                                                    <div class="small text-muted mt-3">
+                                                        <i class="fas fa-info-circle"></i> Odds data source: {{ odds.data_source }}
+                                                    </div>
+                                                    {% endif %}
+                                                    {% else %}
+                                                    <p class="card-text">No odds available for market comparison</p>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="alert alert-secondary mt-2">
+                                        <h6 class="alert-heading">Conclusion:</h6>
+                                        <p class="mb-0">
+                                            Our model favors the {{ game.home_team.name if prediction.home_win_probability > 0.5 else game.away_team.name }}. 
+                                            
+                                            {% if prediction.home_win_probability > 0.5 %}
+                                                {% set has_batting_advantage = (home_team_stats.ops if home_team_stats else 0) > (away_team_stats.ops if away_team_stats else 0) %}
+                                                {% set has_pitching_advantage = home_pitcher and away_pitcher and home_pitcher.era < away_pitcher.era %}
+                                                
+                                                {% if has_batting_advantage or has_pitching_advantage %}
+                                                    Key factors include: 
+                                                    {% if has_batting_advantage %}
+                                                        superior batting metrics ({{ "%.3f"|format(home_team_stats.ops) }} OPS vs {{ "%.3f"|format(away_team_stats.ops) }} OPS), 
+                                                    {% endif %}
+                                                    {% if has_pitching_advantage %}
+                                                        stronger pitching ({{ "%.2f"|format(home_pitcher.era) }} ERA vs {{ "%.2f"|format(away_pitcher.era) }} ERA), 
+                                                    {% endif %}
+                                                    and the home field advantage.
+                                                {% else %}
+                                                    Major factor is the home field advantage (approximately 8% boost).
+                                                {% endif %}
+                                            {% else %}
+                                                {% set has_batting_advantage = (away_team_stats.ops if away_team_stats else 0) > (home_team_stats.ops if home_team_stats else 0) %}
+                                                {% set has_pitching_advantage = away_pitcher and home_pitcher and away_pitcher.era < home_pitcher.era %}
+                                                
+                                                {% if has_batting_advantage or has_pitching_advantage %}
+                                                    Key factors include: 
+                                                    {% if has_batting_advantage %}
+                                                        superior batting metrics ({{ "%.3f"|format(away_team_stats.ops) }} OPS vs {{ "%.3f"|format(home_team_stats.ops) }} OPS)
+                                                        {% if has_pitching_advantage %} and {% endif %}
+                                                    {% endif %}
+                                                    {% if has_pitching_advantage %}
+                                                        stronger pitching ({{ "%.2f"|format(away_pitcher.era) }} ERA vs {{ "%.2f"|format(home_pitcher.era) }} ERA)
+                                                    {% endif %}
+                                                    that outweigh the home field advantage.
+                                                {% else %}
+                                                    The prediction is based on other factors not shown in the basic stats displayed here.
+                                                {% endif %}
+                                            {% endif %}
+                                            {% if odds %}
+                                                The current betting market appears to {{ "undervalue" if (prediction.home_win_probability > 0.5 and prediction.home_moneyline_value > 0) or (prediction.home_win_probability < 0.5 and prediction.away_moneyline_value > 0) else "properly value" }} this team's win probability.
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Betting Value -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h5>Betting Value Details</h5>
+                            {% if not odds %}
+                                <div class="alert alert-warning">
+                                    No odds data available for this game. Edge calculations require odds from sportsbooks.
+                                </div>
+                            {% else %}
+                                <div class="table-responsive">
+                                    <table class="table table-dark">
+                                        <thead>
+                                            <tr>
+                                                <th>Market</th>
+                                                <th>Edge</th>
+                                                <th>Recommended?</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>{{ game.home_team.name }} Moneyline</td>
+                                                <td class="{{ 'text-success' if prediction.home_moneyline_value > 0 else 'text-danger' }}">
+                                                    {{ "%.1f"|format(prediction.home_moneyline_value) }}%
+                                                </td>
+                                                <td>
+                                                    {% if prediction.recommended_bet == 'Home Moneyline' %}
+                                                    <span class="badge bg-success">✓</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>{{ game.away_team.name }} Moneyline</td>
+                                                <td class="{{ 'text-success' if prediction.away_moneyline_value > 0 else 'text-danger' }}">
+                                                    {{ "%.1f"|format(prediction.away_moneyline_value) }}%
+                                                </td>
+                                                <td>
+                                                    {% if prediction.recommended_bet == 'Away Moneyline' %}
+                                                    <span class="badge bg-success">✓</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Over</td>
+                                                <td class="{{ 'text-success' if prediction.over_value > 0 else 'text-danger' }}">
+                                                    {{ "%.1f"|format(prediction.over_value) }}%
+                                                </td>
+                                                <td>
+                                                    {% if prediction.recommended_bet == 'Over' %}
+                                                    <span class="badge bg-success">✓</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Under</td>
+                                                <td class="{{ 'text-success' if prediction.under_value > 0 else 'text-danger' }}">
+                                                    {{ "%.1f"|format(prediction.under_value) }}%
+                                                </td>
+                                                <td>
+                                                    {% if prediction.recommended_bet == 'Under' %}
+                                                    <span class="badge bg-success">✓</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Feature Importance (Temporarily Disabled) -->
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <h5>Key Factors</h5>
+                            <div class="card bg-dark border-secondary">
+                                <div class="card-body">
+                                    <p class="text-center">Feature importance visualization is temporarily unavailable.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <a href="{{ url_for('main.generate_prediction', game_id=game.id) }}" 
+                           class="btn btn-primary">
+                            <i class="fas fa-sync-alt"></i> Update Prediction
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card bg-dark">
+                <div class="card-body text-center py-5">
+                    <h4 class="mb-4">No prediction available for this game</h4>
+                    <a href="{{ url_for('main.generate_prediction', game_id=game.id) }}" 
+                       class="btn btn-primary btn-lg">
+                        <i class="fas fa-magic me-1"></i> Generate Prediction
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Team and Pitcher Stats -->
+    <div class="row">
+        <!-- Home Team Stats -->
+        <div class="col-md-6 mb-4">
+            <div class="card bg-dark h-100">
+                <div class="card-header">
+                    <h4>{{ game.home_team.name }} Stats</h4>
+                </div>
+                <div class="card-body">
+                    {% if home_team_stats %}
+                    <h5>Team Batting</h5>
+                    {% if home_team_stats.data_source %}
+                    <div class="small text-muted mb-2">
+                        <i class="fas fa-info-circle"></i> Data source: {{ home_team_stats.data_source }}
+                    </div>
+                    {% endif %}
+                    <div class="table-responsive mb-4">
+                        <table class="table table-dark table-sm">
+                            <tr>
+                                <th>AVG</th>
+                                <td>{{ "%.3f"|format(home_team_stats.avg) }}</td>
+                                <th>OBP</th>
+                                <td>{{ "%.3f"|format(home_team_stats.obp) }}</td>
+                            </tr>
+                            <tr>
+                                <th>SLG</th>
+                                <td>{{ "%.3f"|format(home_team_stats.slg) }}</td>
+                                <th>OPS</th>
+                                <td>{{ "%.3f"|format(home_team_stats.ops) }}</td>
+                            </tr>
+                            <tr>
+                                <th>wOBA</th>
+                                <td>{{ "%.3f"|format(home_team_stats.woba) }}</td>
+                                <th>xwOBA</th>
+                                <td>{{ "%.3f"|format(home_team_stats.xwoba) }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p><em>Team stats not available</em></p>
+                    {% endif %}
+                    
+                    {% if pitcher_stats and pitcher_stats.home_pitcher %}
+                    <h5>Starting Pitcher</h5>
+                    <p class="mb-3"><strong>{{ pitcher_stats.home_pitcher.name }}</strong></p>
+                    <div class="table-responsive">
+                        <table class="table table-dark table-sm">
+                            <tr>
+                                <th>ERA</th>
+                                <td>{{ "%.2f"|format(pitcher_stats.home_pitcher.era) }}</td>
+                                <th>WHIP</th>
+                                <td>{{ "%.2f"|format(pitcher_stats.home_pitcher.whip) }}</td>
+                            </tr>
+                            <tr>
+                                <th>K/9</th>
+                                <td>{{ "%.1f"|format(pitcher_stats.home_pitcher.k9) }}</td>
+                                <th>BB/9</th>
+                                <td>{{ "%.1f"|format(pitcher_stats.home_pitcher.bb9) }}</td>
+                            </tr>
+                            <tr>
+                                <th>FIP</th>
+                                <td>{{ "%.2f"|format(pitcher_stats.home_pitcher.fip) }}</td>
+                                <th>xFIP</th>
+                                <td>{{ "%.2f"|format(pitcher_stats.home_pitcher.xfip) }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p><em>Pitcher stats not available</em></p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Away Team Stats -->
+        <div class="col-md-6 mb-4">
+            <div class="card bg-dark h-100">
+                <div class="card-header">
+                    <h4>{{ game.away_team.name }} Stats</h4>
+                </div>
+                <div class="card-body">
+                    {% if away_team_stats %}
+                    <h5>Team Batting</h5>
+                    {% if away_team_stats.data_source %}
+                    <div class="small text-muted mb-2">
+                        <i class="fas fa-info-circle"></i> Data source: {{ away_team_stats.data_source }}
+                    </div>
+                    {% endif %}
+                    <div class="table-responsive mb-4">
+                        <table class="table table-dark table-sm">
+                            <tr>
+                                <th>AVG</th>
+                                <td>{{ "%.3f"|format(away_team_stats.avg) }}</td>
+                                <th>OBP</th>
+                                <td>{{ "%.3f"|format(away_team_stats.obp) }}</td>
+                            </tr>
+                            <tr>
+                                <th>SLG</th>
+                                <td>{{ "%.3f"|format(away_team_stats.slg) }}</td>
+                                <th>OPS</th>
+                                <td>{{ "%.3f"|format(away_team_stats.ops) }}</td>
+                            </tr>
+                            <tr>
+                                <th>wOBA</th>
+                                <td>{{ "%.3f"|format(away_team_stats.woba) }}</td>
+                                <th>xwOBA</th>
+                                <td>{{ "%.3f"|format(away_team_stats.xwoba) }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p><em>Team stats not available</em></p>
+                    {% endif %}
+                    
+                    {% if pitcher_stats and pitcher_stats.away_pitcher %}
+                    <h5>Starting Pitcher</h5>
+                    <p class="mb-3"><strong>{{ pitcher_stats.away_pitcher.name }}</strong></p>
+                    <div class="table-responsive">
+                        <table class="table table-dark table-sm">
+                            <tr>
+                                <th>ERA</th>
+                                <td>{{ "%.2f"|format(pitcher_stats.away_pitcher.era) }}</td>
+                                <th>WHIP</th>
+                                <td>{{ "%.2f"|format(pitcher_stats.away_pitcher.whip) }}</td>
+                            </tr>
+                            <tr>
+                                <th>K/9</th>
+                                <td>{{ "%.1f"|format(pitcher_stats.away_pitcher.k9) }}</td>
+                                <th>BB/9</th>
+                                <td>{{ "%.1f"|format(pitcher_stats.away_pitcher.bb9) }}</td>
+                            </tr>
+                            <tr>
+                                <th>FIP</th>
+                                <td>{{ "%.2f"|format(pitcher_stats.away_pitcher.fip) }}</td>
+                                <th>xFIP</th>
+                                <td>{{ "%.2f"|format(pitcher_stats.away_pitcher.xfip) }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p><em>Pitcher stats not available</em></p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Odds Comparison -->
+    {% if odds %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card bg-dark">
+                <div class="card-header">
+                    <h4 class="mb-0">Odds Comparison</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-dark">
+                            <thead>
+                                <tr>
+                                    <th>Sportsbook</th>
+                                    <th>{{ game.home_team.name }} ML</th>
+                                    <th>{{ game.away_team.name }} ML</th>
+                                    <th>Spread</th>
+                                    <th>Total</th>
+                                    <th>Over</th>
+                                    <th>Under</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for book, data in odds.items() %}
+                                <tr>
+                                    <td>{{ book }}</td>
+                                    <td>{{ data.home_moneyline }}</td>
+                                    <td>{{ data.away_moneyline }}</td>
+                                    <td>{{ data.home_spread }} ({{ data.home_spread_odds }})</td>
+                                    <td>{{ data.total_over_under }}</td>
+                                    <td>{{ data.over_odds }}</td>
+                                    <td>{{ data.under_odds }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% if odds.data_source %}
+                    <div class="small text-muted mt-3">
+                        <i class="fas fa-info-circle"></i> Odds data source: {{ odds.data_source }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Additional chart or visualization scripts could go here
+</script>
+{% endblock %}

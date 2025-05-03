@@ -1,0 +1,61 @@
+### 📬 Message to Replit – Prediction Engine Upgrade Plan
+
+Hi team — here’s a summary of the current MLB prediction system and what we’d like to upgrade based on a full audit.
+
+---
+
+## ✅ Current System Strengths (Keep These)
+
+* **Stat-based win model** using batting avg, ERA, OPS, and home field
+* **Bayesian calibration** for win probability and runs
+* **Confidence scoring** based on feature availability (pitching, weather, etc.)
+* **Ensemble blending** using CatBoost + simulation
+* **Betting value logic** that compares implied vs. model probability (expected value)
+* **Run prediction model** with MLB score constraints (2–8 runs per team)
+* **No mock/static data** – everything based on real API input only
+
+---
+
+## 🚀 Proposed Enhancements (From New System Design)
+
+### 🔹 Feature Additions
+
+* Integrate **xwOBA, barrel %, exit velocity** from Statcast (via `pybaseball`)
+* Add **umpire influence data** (e.g. K-rate, over/under bias by ump)
+* Compute **bullpen fatigue index** based on recent reliever usage
+* Merge **park factors + wind direction** for scoring environment adjustments
+
+### 🔹 Model Explainability
+
+* Add **SHAP value logging** to explain why the model favors each team
+* Useful for debugging and future UI/analytics display
+
+### 🔹 Enhanced Simulation & Correlation Tools
+
+* Use simulated score distributions to:
+
+  * Calculate runline & total probabilities
+  * Optimize same-game parlay (SGP) recommendations
+  * Highlight correlated outcomes with mispriced parlay legs
+
+### 🔹 Performance Tracking
+
+* Log **daily Brier score** and **ROI vs. closing line**
+* Track model accuracy where edge > 5% to validate real-world returns
+
+### 🔹 Market Movement Insight
+
+* Detect **reverse line movement** where public % and sharp money disagree
+* Compare model's early prediction to line move direction (was it ahead?)
+
+---
+
+## 🛠 Implementation Notes
+
+* No changes to core prediction flow needed — all enhancements are add-ons
+* All testing must use **real API-fed data only** (no static mockups)
+* Add SHAP module, simulation module, and edge validator as clean, testable submodules
+
+Let us know once you’ve reviewed or if you’d like these tasks broken out into cards or GitHub issues.
+
+Thanks again!
